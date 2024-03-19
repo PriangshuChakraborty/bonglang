@@ -1,8 +1,6 @@
 const code = `
-eta x = 3;
-eta y = 2;
-eta sum = y;
-lekh sum; 
+eta y=6;
+lekh y;
 `
 function lexer(input) {
     const tokens = [];
@@ -68,22 +66,45 @@ function parser(tokens) {
                 name: tokens.shift().value,
                 value: null
             }
-
             if (tokens[0].type === 'operator' && tokens[0].value === '=') {
                 tokens.shift();
                 let expression = ''
                 while (tokens[0].type !== 'keyword' && tokens.length > 0) {
+                    if (tokens[0].type !== 'operator' && tokens[1].type === 'identifier') {
+                        expression += tokens.shift().value 
+                        break
+                    }
                     expression += tokens.shift().value;  
                 }
-
                 declaration.value= expression.trim();
             }
             ast.body.push(declaration);
         }
 
+        if (token.type === 'identifier') {
+            let equation = {
+                type: 'equation',
+                name: token.value,
+                value: null
+            }
+            if (tokens[0].type === 'operator' && tokens[0].value === '=') {
+                tokens.shift();
+                let expression = ''
+                while (tokens[0].type !== 'keyword' && tokens.length > 0) {
+                    if (tokens[0].type !== 'operator' && tokens[1].type === 'identifier') {
+                        expression += tokens.shift().value 
+                        break
+                    }
+                    expression += tokens.shift().value;  
+                }
+                    equation.value= expression.trim();
+            }
+            ast.body.push(equation);
+        }
+
         if(token.type === 'keyword' && token.value === 'lekh'){
             let expression = '';
-            while(tokens[0]?.type !== 'keyword' && tokens.length > 0){
+            while (tokens[0]?.type !== 'keyword' && tokens.length > 0) {
                 expression += tokens.shift().value + ' ';
             }
             ast.body.push({
@@ -100,7 +121,9 @@ function codeGenerator(node) {
         case 'Program':
             return node.body.map(codeGenerator).join('\n');
         case 'declaration':
-            return `const ${node.name} = ${node.value};`;
+            return `let ${node.name} = ${node.value};`;
+        case 'equation':
+            return ` ${node.name} = ${node.value};`;
         case 'print':
             return `console.log(${node.value});`;
     }
@@ -108,9 +131,11 @@ function codeGenerator(node) {
 
 function compiler(input) {
     let tokens = lexer(input);
+    console.log(tokens)
     let ast = parser(tokens);
     console.log(ast)
     let excutableCode = codeGenerator(ast);
+    console.log(excutableCode)
     return excutableCode
 }
 
