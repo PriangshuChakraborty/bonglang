@@ -1,0 +1,19 @@
+eta y=2
+eta x=2;
+jodi(x==0){
+    lekh "x is 0";
+    jodi(y!=2){
+        lekh "y is 2";
+    }
+    noito{
+        eta z=0
+        porjonto(z!=2){
+            lekh z;
+            z=z+1;
+        }
+    }
+}
+noito{
+    lekh "x is not 0";
+}
+lekh y;

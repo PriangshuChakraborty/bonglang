@@ -1,16 +1,9 @@
-const code = `
-eta y=2
-eta x=0;
-porjonto(x!=y){
-    lekh x;
-    x=x+1;
-}
-lekh y;
-`
+const readFiles = require("./excution");
+
 function lexer(input) {
     const tokens = [];
     let cursor = 0;
-    let brackets_loop;
+    let brackets_stack = [];
 
     while (cursor < input.length) {
        
@@ -26,9 +19,7 @@ function lexer(input) {
                 word += input[cursor];
                 cursor++;
             }
-            if (word === 'porjonto') {
-                    brackets_loop = 0
-                }
+
             if (word === 'eta' || word === 'lekh' || word === 'jodi' || word === 'noito' || word === 'porjonto') {
                 
                 tokens.push({ type: 'keyword', value: word });
@@ -48,12 +39,12 @@ function lexer(input) {
         
         if (/[(){}\[\]]/.test(input[cursor])) {
             if (input[cursor] === '{') {
-                brackets_loop++;
+                brackets_stack.push(input[cursor]);
             } else if (input[cursor] === '}') {
-                brackets_loop--;
+                brackets_stack.pop();
             }
-            if (brackets_loop === 0 && input[cursor] === '}') {
-                tokens.push({ type: 'brackets_loop', value: input[cursor] })
+            if (brackets_stack.length === 0 && input[cursor] === '}') {
+                tokens.push({ type: 'brackets_end', value: input[cursor] })
             } else{
                 tokens.push({ type: 'brackets', value: input[cursor] });
         }
@@ -156,13 +147,18 @@ function parser(tokens) {
             let element = []
             if (tokens[0]?.type === 'brackets' && tokens[0].value === '{') {
                 tokens.shift();
-                while (tokens[0]?.value !== "}") {
+               
+                while (tokens[0].type !== 'brackets_end') {
                     element.push(tokens[0])
                     tokens.shift()
+                  
                 }
-                tokens.shift();
-                blockBody = parser(element);
+               
+                let joined = element.map((el) => el.value).join(' ')
+                let joined_tokens = lexer(joined)
+                blockBody = parser(joined_tokens);
                 blockCode.body = blockBody;
+                 tokens.shift();
                 
             }
             ast.body.push(blockCode);
@@ -177,14 +173,18 @@ function parser(tokens) {
             let element = []
             if (tokens[0]?.type === 'brackets' && tokens[0].value === '{') {
                 tokens.shift();
-                while (tokens[0].value !== "}") {
+               
+                while (tokens[0].type !== 'brackets_end') {
                     element.push(tokens[0])
                     tokens.shift()
+                  
                 }
-                tokens.shift();
-                blockBody = parser(element);
+               
+                let joined = element.map((el) => el.value).join(' ')
+                let joined_tokens = lexer(joined)
+                blockBody = parser(joined_tokens);
                 blockCode_else.body = blockBody;
-                
+                 tokens.shift();
             }
             ast.body.push(blockCode_else);
         }
@@ -212,15 +212,18 @@ function parser(tokens) {
             let element = []
             if (tokens[0]?.type === 'brackets' && tokens[0].value === '{') {
                 tokens.shift();
-                while (tokens[0].type !== 'brackets_loop') {
+               
+                while (tokens[0].type !== 'brackets_end') {
                     element.push(tokens[0])
                     tokens.shift()
                   
                 }
-                tokens.shift();
-                blockBody = parser(element);
+               
+                let joined = element.map((el) => el.value).join(' ')
+                let joined_tokens = lexer(joined)
+                blockBody = parser(joined_tokens);
                 blockCode_loop.body = blockBody;
-                
+                 tokens.shift();
             }
             ast.body.push(blockCode_loop);
         }
@@ -273,5 +276,10 @@ function compiler(input) {
 function runner(input) {
     eval(input)
 }
+async function main() {
+    let data = await readFiles(); 
+    runner(compiler(data[0]));
+}
 
-runner(compiler(code));
+main();
+
