@@ -1,9 +1,13 @@
-const readFiles = require("./excution");
+const readFile = require("./excution");
+
 
 function lexer(input) {
     const tokens = [];
     let cursor = 0;
     let brackets_stack = [];
+    let brackets_while;
+    let brackets_if;
+    let brackets_if_else;
 
     while (cursor < input.length) {
        
@@ -20,7 +24,15 @@ function lexer(input) {
                 cursor++;
             }
 
-            if (word === 'eta' || word === 'lekh' || word === 'jodi' || word === 'noito' || word === 'porjonto') {
+            if (word === 'porjonto') { 
+                brackets_while = 0;
+            } else if (word === 'jodi') {
+                brackets_if = 0;
+            }else if (word === 'othoba') {
+                brackets_if_else = 0;
+            }
+
+            if (word === 'eta' || word === 'lekh' || word === 'jodi' || word === 'noito' || word === 'porjonto'||word === 'othoba') {
                 
                 tokens.push({ type: 'keyword', value: word });
             } else {
@@ -42,16 +54,49 @@ function lexer(input) {
                 brackets_stack.push(input[cursor]);
             } else if (input[cursor] === '}') {
                 brackets_stack.pop();
+            } else if (input[cursor] === '(') {
+                brackets_while++;
+                if (brackets_if !== undefined) {
+                    brackets_if++;
+                }
+                if (brackets_if_else !== undefined) {
+                    brackets_if_else++;
+                }
+            } else if (input[cursor] === ')') {
+                brackets_while--;
+                if (brackets_if !== undefined) {
+                    brackets_if--;
+                }
+                if (brackets_if_else !== undefined) {
+                    brackets_if_else--;
+                    
+                }
             }
+
             if (brackets_stack.length === 0 && input[cursor] === '}') {
                 tokens.push({ type: 'brackets_end', value: input[cursor] })
-            } else{
-                tokens.push({ type: 'brackets', value: input[cursor] });
-        }
+            } else {
+                if (brackets_while === 0 && input[cursor] === ')') {
+                    tokens.push({ type: 'condition_while', value: input[cursor] });
+                    brackets_while = undefined;
+                } else {
+                    if (brackets_if === 0 && input[cursor] === ')') {
+                        tokens.push({ type: 'condition_if', value: input[cursor] });
+                        brackets_if = undefined;
+                    } else {
+                        if (brackets_if_else === 0 && input[cursor] === ')') {
+                            tokens.push({ type: 'condition_if_else', value: input[cursor] });
+                            brackets_if_else = undefined;
+                        } else {
+                            tokens.push({ type: 'brackets', value: input[cursor] });
+                        }
+                    }
+                }
+            }
              
         }
 
-        if(/(\+|-|\*|\/|=|\!)/.test(input[cursor])){
+        if(/(\+|-|\*|\/|=|\!|\>|\<|\%|\,|\&|\|)/.test(input[cursor])){
             tokens.push({ type: 'operator', value: input[cursor] });
         }
         if (input[cursor] === '"') {
@@ -136,7 +181,7 @@ function parser(tokens) {
             let expression = '';
             if(tokens[0]?.type === 'brackets' && tokens[0].value === '('){
                 tokens.shift();
-                while (tokens[0]?.type !== 'brackets' && tokens.length > 0 && tokens[0]?.value !== ')') {
+                while (tokens[0]?.type !== 'condition_if' && tokens.length > 0 ) {
                 expression += tokens.shift().value;
             }
                 conditions.value = expression.trim();
@@ -162,6 +207,48 @@ function parser(tokens) {
                 
             }
             ast.body.push(blockCode);
+        }
+
+        if (token.type === 'keyword' && token.value === 'othoba') { 
+            
+            let conditions = {
+                type: 'conditions',
+                value: null
+            }
+            let blockCode_if_else = {
+                type: 'blockCode_if_else',
+                conditions:null,
+                body: null
+            }
+            let expression = '';
+            if(tokens[0]?.type === 'brackets' && tokens[0].value === '('){
+                tokens.shift();
+                while (tokens[0]?.type !== 'condition_if_else' && tokens.length > 0 ) {
+                expression += tokens.shift().value;
+            }
+                conditions.value = expression.trim();
+                blockCode_if_else.conditions = conditions;
+                tokens.shift();
+            }
+            let blockBody = null;
+            let element = []
+            if (tokens[0]?.type === 'brackets' && tokens[0].value === '{') {
+                tokens.shift();
+               
+                while (tokens[0].type !== 'brackets_end') {
+                    element.push(tokens[0])
+                    tokens.shift()
+                  
+                }
+               
+                let joined = element.map((el) => el.value).join(' ')
+                let joined_tokens = lexer(joined)
+                blockBody = parser(joined_tokens);
+                blockCode_if_else.body = blockBody;
+                 tokens.shift();
+                
+            }
+            ast.body.push(blockCode_if_else);
         }
 
          if (token.type === 'keyword' && token.value === 'noito') { 
@@ -201,7 +288,7 @@ function parser(tokens) {
             let expression = '';
             if(tokens[0]?.type === 'brackets' && tokens[0].value === '('){
                 tokens.shift();
-                while (tokens[0]?.type !== 'brackets' && tokens.length > 0 && tokens[0]?.value !== ')') {
+                while (tokens[0]?.type !== 'condition_while' && tokens.length > 0) {
                 expression += tokens.shift().value;
             }
                 conditions.value = expression.trim();
@@ -263,12 +350,16 @@ function codeGenerator(node) {
             return `else{${node.body.body.map(codeGenerator).join('\n')}}`;
         case 'blockCode_loop':
             return `while(${node.conditions.value}){${node.body.body.map(codeGenerator).join('\n')}}`;
+        case 'blockCode_if_else':
+            return `else if(${node.conditions.value}){${node.body.body.map(codeGenerator).join('\n')}}`;
     }
 }
 
 function compiler(input) {
     let tokens = lexer(input);
+
     let ast = parser(tokens);
+  
     let excutableCode = codeGenerator(ast);
     return excutableCode
 }
@@ -276,10 +367,23 @@ function compiler(input) {
 function runner(input) {
     eval(input)
 }
+
+let arguments = process.argv;
+let file = arguments[2];
+
+
 async function main() {
-    let data = await readFiles(); 
-    runner(compiler(data[0]));
+    if (file.endsWith('.bong') === true) {
+        try{
+         let data = await readFile(file);
+            runner(compiler(data));
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        throw new Error('File extension not supported');
+    } 
 }
 
-main();
 
+main();

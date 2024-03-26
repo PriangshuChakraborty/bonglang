@@ -1,0 +1,23 @@
+{
+  "name": "bonglang",
+  "version": "1.0.0",
+  "description": "A toy language whoose keyword is in bengali",
+  "main": "compiler.js",
+  "scripts": {
+    "test": "npm run test",
+    "start": "node compiler.js" 
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PriangshuChakraborty/bonglang.git"
+  },
+  "keywords": [
+    "npm"
+  ],
+  "author": "Priangshu Chakraborty",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PriangshuChakraborty/bonglang/issues"
+  },
+  "homepage": "https://github.com/PriangshuChakraborty/bonglang#readme"
+}
