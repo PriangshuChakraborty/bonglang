@@ -33,6 +33,7 @@ eta a = 10
 eta b = 4.568
 eta c = true
 eta d = false
+# this is command line #
 eta e = "kolkata"
 eta f = null
 
