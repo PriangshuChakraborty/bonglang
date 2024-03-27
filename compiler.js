@@ -97,7 +97,7 @@ function lexer(input) {
              
         }
 
-        if (/(\+|-|\*|\/|=|\!|\>|\<|\%|\,|\&|\|)/.test(input[cursor])) {
+        if (/(\+|-|\*|\/|=|\!|\>|\<|\%|\,|\#|\&|\|)/.test(input[cursor])) {
             tokens.push({ type: 'operator', value: input[cursor] });
         }
         if (input[cursor] === '"') {
@@ -341,6 +341,13 @@ function parser(tokens) {
             }); 
         }
 
+        if (token.value === '#') { 
+            while (tokens[0]?.value !== '#'&& tokens.length > 0) {
+                tokens.shift();
+            }
+            tokens.shift();
+        }
+
         if(token.type === 'keyword' && token.value === 'lekh'){
             let expression = '';
             while (tokens[0]?.type !== 'keyword' && tokens.length > 0) {
@@ -389,6 +396,7 @@ function compiler(input) {
     let tokens = lexer(input);
     let ast = parser(tokens);
     let excutableCode = codeGenerator(ast);
+    console.log(excutableCode)
     return excutableCode
 }
 
