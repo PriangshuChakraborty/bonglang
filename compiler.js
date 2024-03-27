@@ -404,7 +404,6 @@ function compiler(input) {
     let tokens = lexer(input);
     let ast = parser(tokens);
     let excutableCode = codeGenerator(ast);
-    console.log(excutableCode)
     return excutableCode
 }
 
