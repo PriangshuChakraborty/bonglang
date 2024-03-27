@@ -4,7 +4,7 @@
 Bonglang is a fun programming language written in Javascript. It use bengali language as a keyword.
 # Usage
 
-- First clone this repository to your local system ( use git clone if you have git bash terminal or download from github ).
+- First clone this repository to your local system ( use ```git clone``` if you have git bash terminal or download from github ).
 - Go to bonglang folder
 - Create a file with ```.bong``` extension
 - Write your code with bonglang language on that folder
