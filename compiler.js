@@ -139,6 +139,9 @@ function parser(tokens) {
                         expression += tokens.shift().value 
                         break
                     }
+                    if (tokens[0]?.type === 'operator' && tokens[0]?.value === '#') {
+                        break
+                    }
                     expression += tokens.shift().value;  
                 }
                 declaration.value= expression.trim();
@@ -160,10 +163,12 @@ function parser(tokens) {
                         expression += tokens.shift().value
                         break
                     }
-                    expression += tokens.shift().value;  
-                    
+                    if (tokens[0]?.type === 'operator' && tokens[0]?.value === '#') {
+                        break
+                    }
+                    expression += tokens.shift().value;
                 }
-                    equation.value= expression.trim();
+                 equation.value= expression.trim();
             } else if (tokens[0]?.type === 'operator' && tokens[1].value === '=' &&/(\+|-|\*|\/|\!|\%)/.test(tokens[0].value)) {
                 equation.name += tokens.shift().value;
                 tokens.shift();
@@ -171,6 +176,9 @@ function parser(tokens) {
                 while (tokens[0]?.type !== 'keyword' && tokens.length > 0) {
                     if (tokens[0]?.type !== 'operator' && tokens[1]?.type === 'identifier'&&tokens[0]?.type !== 'brackets') {
                         expression += tokens.shift().value
+                        break
+                    }
+                    if (tokens[0]?.type === 'operator' && tokens[0]?.value === '#') {
                         break
                     }
                     expression += tokens.shift().value;  
