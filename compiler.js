@@ -19,7 +19,8 @@ function lexer(input) {
 
         if (/[A-Za-z]/.test(input[cursor])) {
             let word = "";
-            while (/[a-zA-Z0-9_]/.test(input[cursor])) {
+
+            while (/[a-zA-Z0-9_]/.test(input[cursor]) && cursor < input.length) { 
                 word += input[cursor];
                 cursor++;
             }
@@ -32,7 +33,7 @@ function lexer(input) {
                 brackets_if_else = 0;
             }
 
-            if (word === 'eta' || word === 'lekh' || word === 'jodi' || word === 'noito' || word === 'porjonto'||word === 'othoba') {
+            if (word === 'eta' || word === 'lekh' || word === 'jodi' || word === 'noito' || word === 'porjonto'||word === 'othoba'||word === 'chol'||word === 'tham') {
                 
                 tokens.push({ type: 'keyword', value: word });
             } else {
@@ -96,7 +97,7 @@ function lexer(input) {
              
         }
 
-        if(/(\+|-|\*|\/|=|\!|\>|\<|\%|\,|\&|\|)/.test(input[cursor])){
+        if (/(\+|-|\*|\/|=|\!|\>|\<|\%|\,|\&|\|)/.test(input[cursor])) {
             tokens.push({ type: 'operator', value: input[cursor] });
         }
         if (input[cursor] === '"') {
@@ -163,6 +164,19 @@ function parser(tokens) {
                     
                 }
                     equation.value= expression.trim();
+            } else if (tokens[0]?.type === 'operator' && tokens[1].value === '=' &&/(\+|-|\*|\/|\!|\%)/.test(tokens[0].value)) {
+                equation.name += tokens.shift().value;
+                tokens.shift();
+                let expression = ""
+                while (tokens[0]?.type !== 'keyword' && tokens.length > 0) {
+                    if (tokens[0]?.type !== 'operator' && tokens[1]?.type === 'identifier'&&tokens[0]?.type !== 'brackets') {
+                        expression += tokens.shift().value
+                        break
+                    }
+                    expression += tokens.shift().value;  
+                    
+                }
+                    equation.value= expression.trim();
             }
             ast.body.push(equation);
         }
@@ -196,7 +210,6 @@ function parser(tokens) {
                 while (tokens[0].type !== 'brackets_end') {
                     element.push(tokens[0])
                     tokens.shift()
-                  
                 }
                
                 let joined = element.map((el) => el.value).join(' ')
@@ -264,7 +277,6 @@ function parser(tokens) {
                 while (tokens[0].type !== 'brackets_end') {
                     element.push(tokens[0])
                     tokens.shift()
-                  
                 }
                
                 let joined = element.map((el) => el.value).join(' ')
@@ -296,7 +308,7 @@ function parser(tokens) {
                 tokens.shift();
             }
             let blockBody = null;
-            let element = []
+            let element = [] 
             if (tokens[0]?.type === 'brackets' && tokens[0].value === '{') {
                 tokens.shift();
                
@@ -313,6 +325,20 @@ function parser(tokens) {
                  tokens.shift();
             }
             ast.body.push(blockCode_loop);
+        }
+
+        if (token.type === 'keyword' && token.value === 'chol') { 
+            ast.body.push({
+                type: 'continue',
+                value: token.value
+            }); 
+        }
+
+        if (token.type === 'keyword' && token.value === 'tham') { 
+            ast.body.push({
+                type: 'break',
+                value: token.value
+            }); 
         }
 
         if(token.type === 'keyword' && token.value === 'lekh'){
@@ -341,7 +367,7 @@ function codeGenerator(node) {
         case 'declaration':
             return `let ${node.name} = ${node.value};`;
         case 'equation':
-            return ` ${node.name} = ${node.value};`;
+            return ` ${node.name}= ${node.value};`;
         case 'print':
             return `console.log(${node.value});`;
         case 'blockCode':
@@ -352,14 +378,16 @@ function codeGenerator(node) {
             return `while(${node.conditions.value}){${node.body.body.map(codeGenerator).join('\n')}}`;
         case 'blockCode_if_else':
             return `else if(${node.conditions.value}){${node.body.body.map(codeGenerator).join('\n')}}`;
+        case 'continue':
+            return `continue;`;
+        case 'break':
+            return `break;`;
     }
 }
 
 function compiler(input) {
     let tokens = lexer(input);
-
     let ast = parser(tokens);
-  
     let excutableCode = codeGenerator(ast);
     return excutableCode
 }
@@ -375,7 +403,7 @@ let file = arguments[2];
 async function main() {
     if (file.endsWith('.bong') === true) {
         try{
-         let data = await readFile(file);
+            let data = await readFile(file);
             runner(compiler(data));
         } catch (err) {
             console.error(err);
