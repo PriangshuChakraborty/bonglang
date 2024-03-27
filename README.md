@@ -113,3 +113,5 @@ porjonto(a<=10){
 4
 6
 ```
+## Special note
+You can't do DSA with Bonglang.
