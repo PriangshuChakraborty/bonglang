@@ -363,6 +363,9 @@ function parser(tokens) {
                         expression += tokens.shift().value + ' ' 
                         break
                 }
+                if (tokens[0]?.type === 'operator' && tokens[0]?.value === '#') {
+                        break
+                    }
                 expression += tokens.shift().value + ' ';
             }
             
